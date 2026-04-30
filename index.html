@@ -1,71 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Shrimplicity Games</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Shrimplicity Games</title>
 
-  <style>
-    body {
-      margin: 0;
-      background: #07121a;
-      font-family: Arial, sans-serif;
-      color: white;
-      text-align: center;
-    }
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: radial-gradient(circle at top, #0b1f2a, #050c12);
+  color: white;
+  text-align: center;
+  overflow-x: hidden;
+}
 
-    /* Prevent side scrolling */
-    html, body {
-      max-width: 100%;
-      overflow-x: hidden;
-    }
+/* container */
+.container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 40px 20px;
+}
 
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-    }
+/* glass effect */
+.glass {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+  padding: 20px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 40px rgba(0,150,255,0.08);
+}
 
-    /* Artwork image */
-    .hero-art {
-      width: 100%;
-      max-width: 1200px;
-      height: auto;
-      border-radius: 12px;
-      box-shadow: 0 0 30px rgba(0, 150, 255, 0.2);
-    }
+/* artwork */
+.hero-art {
+  width: 100%;
+  height: auto;
+  border-radius: 16px;
+}
 
-    .buttons {
-      margin-top: 20px;
-    }
+/* buttons */
+.buttons {
+  margin-top: 25px;
+}
 
-    .buttons a {
-      display: inline-block;
-      margin: 10px;
-      padding: 12px 20px;
-      background: rgba(0, 200, 255, 0.1);
-      border: 1px solid rgba(0, 200, 255, 0.4);
-      border-radius: 8px;
-      text-decoration: none;
-      color: white;
-      transition: 0.2s;
-    }
+.buttons a {
+  display: inline-block;
+  margin: 10px;
+  padding: 14px 24px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: white;
+  font-weight: bold;
 
-    .buttons a:hover {
-      background: rgba(0, 200, 255, 0.3);
-    }
+  background: rgba(0,150,255,0.1);
+  border: 1px solid rgba(0,150,255,0.4);
 
-  </style>
+  transition: all 0.2s ease;
+}
+
+.buttons a:hover {
+  background: rgba(0,150,255,0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 0 15px rgba(0,150,255,0.5);
+}
+
+/* subtle bubbles */
+.bubbles {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  top: 0;
+  left: 0;
+}
+
+.bubble {
+  position: absolute;
+  bottom: -50px;
+  width: 8px;
+  height: 8px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 50%;
+  animation: rise 10s linear infinite;
+}
+
+@keyframes rise {
+  to {
+    transform: translateY(-110vh);
+    opacity: 0;
+  }
+}
+</style>
 </head>
 
 <body>
 
-  <div class="container">
+<div class="bubbles">
+  <div class="bubble" style="left:10%; animation-delay:0s;"></div>
+  <div class="bubble" style="left:30%; animation-delay:2s;"></div>
+  <div class="bubble" style="left:60%; animation-delay:4s;"></div>
+  <div class="bubble" style="left:80%; animation-delay:1s;"></div>
+</div>
 
-    <!-- YOUR ARTWORK -->
-    <img src="homepage-art.png" alt="Shrimplicity Homepage" class="hero-art"/>
+<div class="container">
+  <div class="glass">
 
-    <!-- BUTTONS -->
+    <img src="homepage-art.png" class="hero-art"/>
+
     <div class="buttons">
       <a href="shrimp-idle.html">Play</a>
       <a href="aquanomy.html">Play</a>
@@ -73,6 +116,7 @@
     </div>
 
   </div>
+</div>
 
 </body>
 </html>
