@@ -1,86 +1,193 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Shrimplicity Games</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shrimplicity Games</title>
+  <meta name="description" content="Shrimplicity Games - Small games. Big tanks." />
+  <style>
+    :root {
+      --bg: #020812;
+      --cyan: #28e7ff;
+      --orange: #ff9a3d;
+      --purple: #c05cff;
+      --white: #eef7ff;
+    }
 
-<style>
-body{
-margin:0;
-font-family:system-ui;
-background:#081420;
-color:#eef6ff;
-display:flex;
-justify-content:center;
-}
+    * {
+      box-sizing: border-box;
+    }
 
-.container{
-max-width:850px;
-padding:60px 30px;
-text-align:center;
-}
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: radial-gradient(circle at 50% 12%, #0b2b42 0%, #020812 48%, #00040a 100%);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--white);
+      overflow-x: hidden;
+    }
 
-h1{
-font-size:44px;
-margin-bottom:6px;
-}
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(77, 210, 255, 0.16), transparent 32%),
+        radial-gradient(circle at 22% 84%, rgba(255, 154, 61, 0.08), transparent 26%),
+        radial-gradient(circle at 78% 82%, rgba(192, 92, 255, 0.08), transparent 28%);
+      z-index: 0;
+    }
 
-.subtitle{
-opacity:.55;
-margin-bottom:50px;
-font-size:14px;
-}
+    .page {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: clamp(10px, 2vw, 22px);
+      position: relative;
+      z-index: 1;
+    }
 
-.game{
-background:#0d1c2c;
-border:1px solid #1f3d5c;
-padding:28px;
-border-radius:16px;
-margin-bottom:18px;
-}
+    .stage {
+      position: relative;
+      width: min(100%, 1536px);
+      aspect-ratio: 3 / 2;
+      border-radius: clamp(14px, 2.2vw, 34px);
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(87, 211, 255, 0.22),
+        0 0 50px rgba(24, 158, 255, 0.18),
+        0 34px 80px rgba(0, 0, 0, 0.62);
+      background: #02101b;
+      isolation: isolate;
+    }
 
-.button{
-display:inline-block;
-padding:11px 18px;
-background:#2e6cff;
-color:white;
-text-decoration:none;
-border-radius:999px;
-font-size:14px;
-}
-</style>
+    .homepage-art {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      user-select: none;
+      -webkit-user-drag: none;
+      display: block;
+    }
 
+    .stage::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.08), transparent 14%, transparent 86%, rgba(255,255,255,.045)),
+        radial-gradient(circle at 50% 50%, transparent 56%, rgba(0,0,0,.15) 100%);
+      mix-blend-mode: screen;
+      opacity: .45;
+    }
+
+    .play-link {
+      position: absolute;
+      display: block;
+      border-radius: 14px;
+      z-index: 5;
+      text-decoration: none;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+    }
+
+    .play-link::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      opacity: 0;
+      transition: opacity .18s ease, box-shadow .18s ease, transform .18s ease;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.45),
+        0 0 24px currentColor;
+      background: rgba(255,255,255,.045);
+    }
+
+    .play-link:hover::before,
+    .play-link:focus-visible::before {
+      opacity: 1;
+    }
+
+    .play-link:active::before {
+      transform: scale(.985);
+    }
+
+    .shrimp-idle { color: var(--orange); left: 15.55%; top: 82.35%; width: 18.8%; height: 6.15%; }
+    .aquanomy { color: var(--cyan); left: 40.1%; top: 82.35%; width: 19.25%; height: 6.15%; }
+    .biofall { color: var(--purple); left: 64.72%; top: 82.35%; width: 18.15%; height: 6.15%; }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .mobile-note {
+      display: none;
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        align-items: start;
+        padding: 8px;
+      }
+
+      .stage {
+        width: 100%;
+        min-height: calc(100vh - 16px);
+        aspect-ratio: auto;
+        border-radius: 18px;
+      }
+
+      .homepage-art {
+        object-fit: cover;
+        object-position: center center;
+      }
+
+      /* On narrow screens the image remains cinematic. These larger tap targets keep it usable. */
+      .shrimp-idle { left: 7%; top: 76%; width: 26%; height: 9%; }
+      .aquanomy { left: 37%; top: 76%; width: 26%; height: 9%; }
+      .biofall { left: 67%; top: 76%; width: 26%; height: 9%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .play-link::before {
+        transition: none;
+      }
+    }
+  </style>
 </head>
-
 <body>
+  <main class="page" aria-label="Shrimplicity Games homepage">
+    <section class="stage" aria-label="Small games. Big tanks.">
+      <img
+        class="homepage-art"
+        src="images/homepage-art.png"
+        alt="Shrimplicity Games underwater landing page with three game cards: Shrimp Idle, Aquanomy, and Biofall."
+      />
 
-<div class="container">
-
-<h1>Shrimplicity Games</h1>
-
-<div class="subtitle">
-small worlds, quietly simulated
-</div>
-
-<div class="game">
-<h2>Shrimp Idle</h2>
-<p>A calm incremental game about persistence.</p>
-<a class="button" href="shrimp-idle.html">Play</a>
-</div>
-
-<div class="game">
-<h2>Aquanomy</h2>
-<p>Aquarium management and colony growth.</p>
-<p style="opacity:.5;">in development</p>
-</div>
-
-<div class="game">
-<h2>Bass Project</h2>
-<p>A nostalgic fishing game.</p>
-<p style="opacity:.5;">in development</p>
-</div>
-
-</div>
-
+      <a class="play-link shrimp-idle" href="shrimp-idle.html" aria-label="Play Shrimp Idle">
+        <span class="sr-only">Play Shrimp Idle</span>
+      </a>
+      <a class="play-link aquanomy" href="aquanomy.html" aria-label="Play Aquanomy">
+        <span class="sr-only">Play Aquanomy</span>
+      </a>
+      <a class="play-link biofall" href="biofall.html" aria-label="Play Biofall">
+        <span class="sr-only">Play Biofall</span>
+      </a>
+    </section>
+  </main>
 </body>
 </html>
