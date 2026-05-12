@@ -624,6 +624,7 @@ let state = {
   triggeredMilestones: [],
   breedProgress: 0,
   lastSavedAt: Date.now(),
+  hiddenAt: null,
   flash: 0,
   prestigePulse: 0,
   lastFrameTime: 0,
@@ -672,7 +673,8 @@ function saveGame(){
     achievements: state.achievements,
     triggeredMilestones: state.triggeredMilestones,
     breedProgress: state.breedProgress,
-    lastSavedAt: state.lastSavedAt
+    lastSavedAt: state.lastSavedAt,
+    hiddenAt: state.hiddenAt
   };
   localStorage.setItem(SAVE_KEY, JSON.stringify(data));
 }
@@ -707,6 +709,7 @@ function loadGame(){
     if(typeof state.prestigePulse !== "number") state.prestigePulse = 0;
     if(typeof state.breedProgress !== "number") state.breedProgress = 0;
     if(typeof state.lastSavedAt !== "number") state.lastSavedAt = Date.now();
+    if(typeof state.hiddenAt !== "number" && state.hiddenAt !== null) state.hiddenAt = null;
     if(!Array.isArray(state.list)) state.list = [];
     if(!Array.isArray(state.achievements)) state.achievements = [];
     if(!Array.isArray(state.triggeredMilestones)) state.triggeredMilestones = [];
@@ -975,15 +978,24 @@ function updateStatusText(now){
 }
 
 function applyOfflineProgress(){
-  const elapsedMs = Math.max(0, Date.now() - (state.lastSavedAt || Date.now()));
+  const now = Date.now();
+  const savedAt = Number.isFinite(state.lastSavedAt) ? state.lastSavedAt : now;
+  const hiddenAt = Number.isFinite(state.hiddenAt) ? state.hiddenAt : null;
+  const startAt = hiddenAt ? Math.min(savedAt, hiddenAt) : savedAt;
+  const elapsedMs = Math.max(0, now - startAt);
   const offlineSeconds = Math.min(MAX_OFFLINE_SECONDS, elapsedMs / 1000);
 
-  if(offlineSeconds < 10) return;
+  if(offlineSeconds < 5){
+    state.hiddenAt = null;
+    return;
+  }
 
   const earned = incomePerSecond() * offlineSeconds;
   state.coins += earned;
+  state.hiddenAt = null;
   invalidateBuyMaxCache();
-  showStatus(`Welcome back. The colony earned ${formatNumber(earned)} coins while you were away.`, 6500, 700);
+  showStatus(`The colony continued while you were away. +${formatNumber(earned)} coins.`, 6500, 700);
+  saveGame();
 }
 
 function checkMilestones(){
@@ -2615,6 +2627,42 @@ function loop(t){
 }
 
 updatePageBackground();
+
+function applyBackgroundCatchup(){
+  if(!Number.isFinite(state.hiddenAt)) return;
+
+  const now = Date.now();
+  const elapsedSeconds = Math.min(MAX_OFFLINE_SECONDS, Math.max(0, (now - state.hiddenAt) / 1000));
+
+  if(elapsedSeconds >= 5){
+    const earned = incomePerSecond() * elapsedSeconds;
+    state.coins += earned;
+    invalidateBuyMaxCache();
+    showStatus(`The colony continued while you were away. +${formatNumber(earned)} coins.`, 5200, 300);
+  }
+
+  state.hiddenAt = null;
+  saveGame();
+}
+
+document.addEventListener("visibilitychange", () => {
+  if(document.hidden){
+    state.hiddenAt = Date.now();
+    saveGame();
+  } else {
+    applyBackgroundCatchup();
+  }
+});
+
+window.addEventListener("pagehide", () => {
+  state.hiddenAt = Date.now();
+  saveGame();
+});
+
+window.addEventListener("pageshow", () => {
+  applyBackgroundCatchup();
+});
+
 applyOfflineProgress();
 unlockAchievements();
 checkMilestones();
@@ -2623,10 +2671,6 @@ renderAchievements();
 invalidateBuyMaxCache();
 
 window.addEventListener("beforeunload", saveGame);
-document.addEventListener("visibilitychange", () => {
-  if(document.hidden) saveGame();
-});
-
 syncShrimp();
 
 requestAnimationFrame(loop);
