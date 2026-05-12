@@ -1,0 +1,1871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>OVERGROWTH</title>
+<style>
+  :root{
+    --glass: rgba(6,18,22,.68);
+    --glass-border: rgba(180,240,230,.16);
+    --text:#e9fffb;
+    --muted:rgba(233,255,251,.72);
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  html,body{
+    width:100%;
+    height:100%;
+    background:#0e1110;
+    overflow:hidden;
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    color:var(--text);
+  }
+
+  canvas{
+    display:block;
+    position:fixed;
+    inset:0;
+    width:100vw;
+    height:100vh;
+  }
+
+  .topTitle{
+    position:fixed;
+    top:14px;
+    left:50%;
+    transform:translateX(-50%);
+    width:calc(100vw - 28px);
+    max-width:420px;
+    padding:10px 14px;
+    border:1px solid rgba(180,240,230,.12);
+    border-radius:18px;
+    background:rgba(3,10,12,.34);
+    backdrop-filter:blur(10px);
+    box-shadow:0 12px 40px rgba(0,0,0,.25);
+    text-align:center;
+    pointer-events:none;
+  }
+
+  .title{
+    font-size:1.05rem;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    font-weight:800;
+  }
+
+  .subtitle{
+    margin-top:2px;
+    font-size:.76rem;
+    color:var(--muted);
+  }
+
+  #ui{
+    position:fixed;
+    left:50%;
+    bottom:max(12px,env(safe-area-inset-bottom));
+    transform:translateX(-50%);
+    width:calc(100vw - 24px);
+    max-width:430px;
+    padding:14px;
+    border-radius:22px;
+    border:1px solid var(--glass-border);
+    background:var(--glass);
+    backdrop-filter:blur(16px);
+    box-shadow:0 18px 55px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.08);
+  }
+
+  .resourceRow{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:12px;
+  }
+
+  #overgrowth{
+    font-size:1.22rem;
+    font-weight:850;
+    letter-spacing:.01em;
+  }
+
+  #rate{
+    color:var(--muted);
+    font-size:.82rem;
+    white-space:nowrap;
+  }
+
+  .buttons{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:9px;
+  }
+
+  button{
+    width:100%;
+    border:1px solid rgba(180,240,230,.16);
+    border-radius:16px;
+    padding:11px 12px;
+    color:var(--text);
+    background:linear-gradient(180deg,rgba(180,240,230,.13),rgba(50,115,110,.08));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+    font:inherit;
+    text-align:left;
+    cursor:pointer;
+  }
+
+  button:active{
+    transform:translateY(1px);
+    background:rgba(160,245,230,.15);
+  }
+
+  .btnTitle{
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    font-weight:750;
+    font-size:.95rem;
+  }
+
+  .btnDesc{
+    margin-top:3px;
+    font-size:.75rem;
+    color:var(--muted);
+  }
+
+  .offlineToast{
+    position:fixed;
+    top:88px;
+    left:50%;
+    transform:translateX(-50%);
+    max-width:calc(100vw - 28px);
+    padding:9px 12px;
+    border-radius:999px;
+    border:1px solid rgba(212,175,55,.25);
+    background:rgba(20,17,6,.65);
+    color:#ffe9a4;
+    backdrop-filter:blur(10px);
+    font-size:.78rem;
+    opacity:0;
+    transition:opacity .4s ease;
+    pointer-events:none;
+  }
+
+  .offlineToast.show{ opacity:1; }
+
+  #achievementsPanel {
+    position: fixed;
+    left: 50%;
+    top: 74px;
+    transform: translateX(-50%);
+    width: calc(100vw - 24px);
+    max-width: 430px;
+    max-height: calc(100vh - 190px);
+    overflow-y: auto;
+    padding: 14px;
+    border-radius: 22px;
+    border: 1px solid rgba(180, 240, 230, 0.16);
+    background: rgba(6, 18, 22, 0.82);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 18px 55px rgba(0, 0, 0, 0.48), inset 0 1px 0 rgba(255,255,255,0.08);
+    display: none;
+    z-index: 12;
+  }
+  #achievementsPanel.show { display: block; }
+  .achHeader { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; }
+  .achHeaderTitle { font-weight:850; letter-spacing:0.04em; text-transform:uppercase; font-size:0.95rem; }
+  .achClose { width:auto; padding:6px 10px; border-radius:10px; text-align:center; }
+  .achItem { border:1px solid rgba(180,240,230,0.10); border-radius:14px; padding:10px; margin-bottom:8px; background:rgba(255,255,255,0.025); }
+  .achName { font-weight:760; font-size:0.88rem; }
+  .achFlavor { margin-top:3px; font-size:0.75rem; color:#ff9b42; }
+  .achDate { margin-top:4px; font-size:0.68rem; color:rgba(233,255,251,0.50); }
+  .achLocked { opacity:0.56; }
+  .mossTrophy { text-align:center; font-size:1.02rem; letter-spacing:0.02em; }
+  .achievementToast {
+    position: fixed; top: 86px; left: 50%; transform: translateX(-50%);
+    width: calc(100vw - 28px); max-width: 410px; padding: 11px 13px;
+    border-radius: 18px; border: 1px solid rgba(255,155,66,0.32);
+    background: rgba(8,12,10,0.78); color:#e9fffb; backdrop-filter: blur(12px);
+    box-shadow:0 16px 44px rgba(0,0,0,0.38); opacity:0; transition:opacity 0.35s ease;
+    pointer-events:none; z-index:14;
+  }
+  .achievementToast.show { opacity:1; }
+  .achievementToast .label { color:#ff9b42; font-size:0.70rem; text-transform:uppercase; letter-spacing:0.08em; font-weight:800; }
+  .achievementToast .name { margin-top:2px; font-size:0.95rem; font-weight:820; }
+  .achievementToast .flavor { margin-top:2px; color:#ff9b42; font-size:0.76rem; }
+
+
+  .topAchBtn{
+    position:fixed;
+    top:16px;
+    right:16px;
+    width:48px;
+    height:48px;
+    border-radius:16px;
+    border:1px solid rgba(180,240,230,.16);
+    background:rgba(6,18,22,.68);
+    backdrop-filter:blur(14px);
+    box-shadow:0 12px 34px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.08);
+    color:#e9fffb;
+    font-size:1.08rem;
+    display:grid;
+    place-items:center;
+    z-index:20;
+    padding:0;
+  }
+
+  .topAchBtn:hover{
+    border-color:rgba(210,255,240,.26);
+  }
+
+  .topAchBtn:active{
+    transform:translateY(1px);
+  }
+
+
+  .topAchBtn{
+    position:fixed; top:16px; right:16px; width:48px; height:48px; border-radius:16px;
+    border:1px solid rgba(180,240,230,.16);
+    background:linear-gradient(180deg, rgba(13,25,20,.88), rgba(5,13,10,.86));
+    backdrop-filter:blur(14px);
+    box-shadow:0 12px 34px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.08);
+    display:grid; place-items:center; z-index:20; padding:0; color:#e9fffb;
+  }
+  .topAchBtn:active{ transform:translateY(1px); }
+  .trophyIcon{ position:relative; width:31px; height:31px; display:block; }
+  .trophyCup{ position:absolute; left:8px; top:5px; width:15px; height:12px; border-radius:4px 4px 5px 5px; background:#d1a249; box-shadow:inset 0 2px 0 rgba(255,232,145,.45), inset 0 -3px 0 rgba(115,82,30,.45); }
+  .trophyCup::before,.trophyCup::after{ content:""; position:absolute; top:3px; width:8px; height:9px; border:3px solid #c4943e; border-radius:50%; }
+  .trophyCup::before{ left:-8px; border-right:0; }
+  .trophyCup::after{ right:-8px; border-left:0; }
+  .trophyStem{ position:absolute; left:13px; top:17px; width:5px; height:7px; border-radius:2px; background:#b88432; }
+  .trophyBase{ position:absolute; left:6px; top:23px; width:19px; height:5px; border-radius:3px; background:#8c6428; box-shadow:inset 0 2px 0 rgba(220,170,70,.55); }
+  .mossBlob{ position:absolute; border-radius:999px; background:#3b8b3a; box-shadow:inset 0 1px 0 rgba(160,220,110,.45); }
+  .mossA{ left:0px; top:2px; width:9px; height:7px; background:#285f2c; }
+  .mossB{ right:0px; top:6px; width:8px; height:6px; background:#4f9a43; }
+  .mossC{ left:2px; bottom:0px; width:10px; height:7px; background:#347a34; }
+  .mossD{ right:3px; bottom:2px; width:9px; height:6px; background:#5fa14b; }
+
+
+  .topAchBtn{
+    position:fixed;
+    top:16px;
+    right:16px;
+    width:48px;
+    height:48px;
+    border-radius:16px;
+    border:1px solid rgba(180,240,230,.16);
+    background:transparent;
+    box-shadow:0 12px 34px rgba(0,0,0,.34);
+    display:grid;
+    place-items:center;
+    z-index:20;
+    padding:0;
+    overflow:hidden;
+  }
+
+  .topAchBtn canvas{
+    display:block;
+    width:48px;
+    height:48px;
+  }
+
+  .topAchBtn:active{
+    transform:translateY(1px);
+  }
+
+
+  .titleText,
+  .gameTitle,
+  .headerTitle,
+  h1{
+    color:#7fa487 !important;
+    text-shadow:
+      0 0 10px rgba(80,120,88,.14),
+      0 0 18px rgba(35,65,40,.08);
+    letter-spacing:.08em;
+  }
+
+  .studioTag,
+  .subtitle,
+  .headerSubtitle{
+    color:rgba(165,195,170,.52) !important;
+    letter-spacing:.10em;
+    font-size:12px;
+  }
+
+
+  /* FINAL BRANDING OVERRIDE */
+  #brandTitle,
+  .brandTitle,
+  .titleText,
+  .gameTitle,
+  .headerTitle,
+  .title,
+  h1 {
+    color: #7fa487 !important;
+    text-shadow: 0 0 10px rgba(80,120,88,.18), 0 0 18px rgba(35,65,40,.10) !important;
+    letter-spacing: .08em !important;
+  }
+
+  #brandStudio,
+  .brandStudio,
+  .studioTag,
+  .subtitle,
+  .headerSubtitle,
+  .subTitle {
+    color: rgba(165,195,170,.62) !important;
+    letter-spacing: .10em !important;
+    font-size: 12px !important;
+  }
+
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div class="topTitle">
+  <div class="title">OVERGROWTH</div>
+  <div class="subtitle">A quiet glass cube of aquatic moss.</div>
+</div>
+
+<div id="toast" class="offlineToast"></div>
+
+<div id="ui">
+  <div class="resourceRow">
+    <div id="overgrowth">0.0 Overgrowth</div>
+    <div id="rate">+0.5/sec</div>
+  </div>
+  <div class="buttons">
+    <button id="flowBtn">
+      <div class="btnTitle"><span>Flow</span><span id="flowCost">10</span></div>
+      <div class="btnDesc">Gentle current. Smoother overgrowth.</div>
+    </button>
+    <button id="anchorBtn">
+      <div class="btnTitle"><span>Anchor</span><span id="anchorCost">22</span></div>
+      <div class="btnDesc">Moss holds better to the stone.</div>
+    </button>
+    <button id="lightBtn">
+      <div class="btnTitle"><span>Light</span><span id="lightCost">30</span></div>
+      <div class="btnDesc">Soft surface glow. Fuller mature moss.</div>
+    </button>
+  </div>
+</div>
+
+
+
+<button id="achBtn" class="topAchBtn" aria-label="Achievements"><canvas id="achIconCanvas" width="48" height="48" aria-hidden="true"></canvas></button>
+
+<div id="achievementToast" class="achievementToast"></div>
+<div id="achievementsPanel">
+  <div class="achHeader">
+    <div class="achHeaderTitle">Achievements</div>
+    <button id="achClose" class="achClose">Close</button>
+  </div>
+  <div id="achievementsList"></div>
+</div>
+
+<script>
+(() => {
+  if(location.search.includes("reset")){
+    Object.keys(localStorage)
+      .filter(k => k.startsWith("mossIdleAquatic"))
+      .forEach(k => localStorage.removeItem(k));
+  }
+
+  const SAVE_KEY = "OvergrowthFinalBrandFresh01";
+
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+
+  const overgrowthEl = document.getElementById("overgrowth");
+  const rateEl = document.getElementById("rate");
+  const toast = document.getElementById("toast");
+  const flowBtn = document.getElementById("flowBtn");
+  const anchorBtn = document.getElementById("anchorBtn");
+  const lightBtn = document.getElementById("lightBtn");
+  const flowCostEl = document.getElementById("flowCost");
+  const anchorCostEl = document.getElementById("anchorCost");
+  const lightCostEl = document.getElementById("lightCost");
+  const achBtn = document.getElementById("achBtn");
+  const achClose = document.getElementById("achClose");
+  const achievementsPanel = document.getElementById("achievementsPanel");
+  const achievementsList = document.getElementById("achievementsList");
+  const achievementToast = document.getElementById("achievementToast");
+  const achIconCanvas = document.getElementById("achIconCanvas");
+
+  let W = 0, H = 0, dpr = 1;
+  let time = 0;
+
+  let rockCanvas, mossCanvas;
+  let tank, rock;
+
+  let particles = [];
+  let shrimps = [];
+  let mossNodes = [];
+  let nextMossNodeId = 1;
+
+  let overgrowth = 0;
+  let baseRate = 0.5;
+  let flow = 0;
+  let anchor = 0;
+  let light = 0;
+  let spawnTimer = 0;
+  let rebuildMossTimer = 0;
+  let earlyMossTimer = 0;
+
+  let mossCoverage = 0.0;
+  let ghostSpore = null;
+  let anticipation = 0;
+  let lightPulse = 0;
+  let creationTime = Date.now();
+  let achievements = {};
+  let achievementToastTimer = null;
+  let purpleShrimpSeen = false;
+  let seenShrimpCount = 0;
+  let lastOfflineAppliedAt = Date.now();
+
+  const rareColors = [
+    {name:"deep", color:[18,86,32], weight:65},
+    {name:"moss", color:[34,116,46], weight:20},
+    {name:"olive", color:[77,106,43], weight:8},
+    {name:"emerald", color:[8,72,56], weight:4},
+    {name:"pale", color:[116,158,77], weight:1.5},
+    {name:"teal", color:[21,123,115], weight:.8},
+    {name:"red", color:[90,32,36], weight:.4},
+    {name:"purple", color:[74,52,123], weight:.2},
+    {name:"gold", color:[212,175,55], weight:.1}
+  ];
+
+  function pickMossColor(){
+    const total = rareColors.reduce((s,c)=>s+c.weight,0);
+    let roll = Math.random() * total;
+    for(const c of rareColors){
+      if(roll <= c.weight) return c;
+      roll -= c.weight;
+    }
+    return rareColors[0];
+  }
+
+  function resize(){
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildScene(true);
+  }
+
+  function getRate(){
+    return (baseRate + flow * 0.12) * (1 + light * 0.13);
+  }
+
+  function flowCost(){ return Math.floor(10 * Math.pow(1.25, flow)); }
+  function anchorCost(){ return Math.floor(22 * Math.pow(1.36, anchor)); }
+  function lightCost(){ return light >= 8 ? "MAX" : Math.floor(30 * Math.pow(1.31, light)); }
+
+  function buildScene(resetMoss){
+    const usableBottom = Math.max(230, H * 0.30);
+    const availableH = H - Math.max(90, H * 0.12) - usableBottom;
+    const size = Math.min(W * 0.78, availableH, 430);
+
+    tank = {
+      x: (W - size) / 2,
+      y: Math.max(90, H * 0.12),
+      w: size,
+      h: size
+    };
+
+    const floorY = tank.y + size * 0.985;
+    rock = {
+      x: tank.x + size * 0.50,
+      y: floorY,
+      w: size * 0.64,
+      h: size * 0.40
+    };
+
+    bakeRock();
+    if(resetMoss || !mossCanvas) bakeMoss();
+
+    buildParticles();
+    buildShrimps();
+  }
+
+
+  function clamp255(v){
+    return Math.max(0, Math.min(255, Math.round(v)));
+  }
+
+  function litHex(hex, amount){
+    let h = hex.replace("#", "");
+    const n = parseInt(h, 16);
+    let r = (n >> 16) & 255;
+    let g = (n >> 8) & 255;
+    let b = n & 255;
+
+    if(amount >= 0){
+      r += (255 - r) * amount;
+      g += (255 - g) * amount;
+      b += (255 - b) * amount;
+    } else {
+      r *= (1 + amount);
+      g *= (1 + amount);
+      b *= (1 + amount);
+    }
+
+    return `rgb(${clamp255(r)},${clamp255(g)},${clamp255(b)})`;
+  }
+
+  function bakeRock(){
+    const pad = 36;
+    const cw = rock.w + pad * 2;
+    const ch = rock.h + pad * 2;
+
+    rockCanvas = document.createElement("canvas");
+    rockCanvas.width = Math.ceil(cw * dpr);
+    rockCanvas.height = Math.ceil(ch * dpr);
+
+    const rc = rockCanvas.getContext("2d");
+    rc.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const rw = rock.w;
+    const rh = rock.h;
+    const cx = pad + rw / 2;
+    const cy = pad + rh;
+
+    function rockPath(r){
+      r.beginPath();
+      r.moveTo(cx - rw * 0.48, cy - rh * 0.08);
+      r.bezierCurveTo(cx - rw * 0.52, cy - rh * 0.60, cx - rw * 0.18, cy - rh * 0.96, cx + rw * 0.07, cy - rh * 0.92);
+      r.bezierCurveTo(cx + rw * 0.32, cy - rh * 0.88, cx + rw * 0.54, cy - rh * 0.60, cx + rw * 0.50, cy - rh * 0.14);
+      r.bezierCurveTo(cx + rw * 0.44, cy + rh * 0.06, cx - rw * 0.28, cy + rh * 0.10, cx - rw * 0.48, cy - rh * 0.08);
+      r.closePath();
+    }
+
+    const shadow = rc.createRadialGradient(cx, cy, rw * 0.08, cx, cy + 6, rw * 0.52);
+    shadow.addColorStop(0, "rgba(0,0,0,.78)");
+    shadow.addColorStop(1, "rgba(0,0,0,0)");
+    rc.fillStyle = shadow;
+    rc.beginPath();
+    rc.ellipse(cx, cy + 4, rw * 0.47, rh * 0.13, 0, 0, Math.PI * 2);
+    rc.fill();
+
+    rockPath(rc);
+
+    // Light changes value/contrast only. Shape and texture positions stay stable.
+    const lightLift = Math.min(0.22, light * 0.035);
+    const lowLightDrop = light === 0 ? -0.16 : -0.08;
+
+    const rg = rc.createLinearGradient(cx - rw * 0.52, cy - rh * 0.72, cx + rw * 0.35, cy + rh * 0.20);
+    rg.addColorStop(0, litHex("#3d4641", lowLightDrop + lightLift));
+    rg.addColorStop(0.22, litHex("#343c37", lowLightDrop * 0.88 + lightLift * 0.92));
+    rg.addColorStop(0.46, litHex("#2a322e", lowLightDrop * 0.68 + lightLift * 0.62));
+    rg.addColorStop(0.76, litHex("#202823", lowLightDrop * 0.45 + lightLift * 0.38));
+    rg.addColorStop(1, litHex("#151c18", -0.10 + lightLift * 0.25));
+    rc.fillStyle = rg;
+    rc.fill();
+
+    rc.save();
+    rockPath(rc);
+    rc.clip();
+
+    let seed = 4209;
+    function sr(){
+      seed = (seed * 16807) % 2147483647;
+      return (seed - 1) / 2147483646;
+    }
+
+    for(let i=0; i<18; i++){
+      const tx = cx + (-.42 + sr() * .84) * rw;
+      const ty = cy + (-.60 + sr() * .72) * rh;
+      const tr = 10 + sr() * 22;
+      const tg = rc.createRadialGradient(tx, ty, 0, tx, ty, tr);
+      tg.addColorStop(0, `rgba(0,0,0,${.16 + sr() * .18})`);
+      tg.addColorStop(1, "rgba(0,0,0,0)");
+      rc.fillStyle = tg;
+      rc.fillRect(tx-tr, ty-tr, tr*2, tr*2);
+    }
+
+    for(let i=0; i<12; i++){
+      const tx = cx + (-.38 + sr() * .52) * rw;
+      const ty = cy + (-.58 + sr() * .42) * rh;
+      const tr = 8 + sr() * 17;
+      const tg = rc.createRadialGradient(tx, ty, 0, tx, ty, tr);
+      tg.addColorStop(0, `rgba(150,160,148,${.08 + sr() * .10})`);
+      tg.addColorStop(1, "rgba(0,0,0,0)");
+      rc.fillStyle = tg;
+      rc.fillRect(tx-tr, ty-tr, tr*2, tr*2);
+    }
+
+    const wetG = rc.createLinearGradient(cx - rw * .35, cy - rh * .68, cx + rw * .16, cy - rh * .08);
+    wetG.addColorStop(0, `rgba(88,130,104,${.10 + Math.min(.16, light*.025)})`);
+    wetG.addColorStop(.48, "rgba(62,96,78,.065)");
+    wetG.addColorStop(1, "rgba(0,0,0,0)");
+    rc.fillStyle = wetG;
+    rc.fillRect(cx-rw*.62, cy-rh*.84, rw*1.25, rh*1.15);
+
+    for(let i=0; i<85; i++){
+      const nx = cx + (-.48 + sr()*.96) * rw;
+      const ny = cy + (-.78 + sr()*.88) * rh;
+      const na = .018 + sr()*.030;
+      rc.fillStyle = sr() < .5 ? `rgba(255,255,255,${na})` : `rgba(0,0,0,${na})`;
+      rc.beginPath();
+      rc.arc(nx, ny, .35 + sr()*1.1, 0, Math.PI*2);
+      rc.fill();
+    }
+
+    rc.restore();
+
+    rockPath(rc);
+    rc.strokeStyle = "rgba(12,18,15,.55)";
+    rc.lineWidth = 1.6;
+    rc.stroke();
+  }
+
+  function bakeMoss(){
+    const pad = 28;
+    const cw = rock.w + pad * 2;
+    const ch = rock.h + pad * 2;
+
+    mossCanvas = document.createElement("canvas");
+    mossCanvas.width = Math.ceil(cw * dpr);
+    mossCanvas.height = Math.ceil(ch * dpr);
+
+    const mc = mossCanvas.getContext("2d");
+    mc.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const cx = pad + rock.w / 2;
+    const cy = pad + rock.h;
+    const rw = rock.w;
+    const rh = rock.h;
+
+    if(!mossNodes.length) return;
+
+    function rockPath(r){
+      r.beginPath();
+      r.moveTo(cx - rw * 0.48, cy - rh * 0.08);
+      r.bezierCurveTo(cx - rw * 0.52, cy - rh * 0.60, cx - rw * 0.18, cy - rh * 0.96, cx + rw * 0.07, cy - rh * 0.92);
+      r.bezierCurveTo(cx + rw * 0.32, cy - rh * 0.88, cx + rw * 0.54, cy - rh * 0.60, cx + rw * 0.50, cy - rh * 0.14);
+      r.bezierCurveTo(cx + rw * 0.44, cy + rh * 0.06, cx - rw * 0.28, cy + rh * 0.10, cx - rw * 0.48, cy - rh * 0.08);
+      r.closePath();
+    }
+
+    function localRandom(seedBase){
+      let seed = Math.max(1, Math.floor(seedBase) % 2147483647);
+      return function(){
+        seed = (seed * 16807) % 2147483647;
+        return (seed - 1) / 2147483646;
+      };
+    }
+
+    function drawFrond(rand, x, y, angle, len, col, alpha){
+      mc.save();
+      mc.globalAlpha = alpha;
+      mc.strokeStyle = col;
+      mc.lineCap = "round";
+      mc.lineWidth = 0.46 + len * 0.030;
+
+      const ex = x + Math.cos(angle) * len;
+      const ey = y + Math.sin(angle) * len;
+
+      mc.beginPath();
+      mc.moveTo(x, y);
+      mc.quadraticCurveTo(
+        x + Math.cos(angle + (rand()-.5)*.35) * len * .48,
+        y + Math.sin(angle + (rand()-.5)*.35) * len * .48,
+        ex, ey
+      );
+      mc.stroke();
+
+      const la = angle - 0.40 - rand() * 0.25;
+      const ra = angle + 0.40 + rand() * 0.25;
+      mc.lineWidth = 0.36;
+
+      mc.beginPath();
+      mc.moveTo(ex, ey);
+      mc.lineTo(ex + Math.cos(la) * len * .48, ey + Math.sin(la) * len * .48);
+      mc.stroke();
+
+      mc.beginPath();
+      mc.moveTo(ex, ey);
+      mc.lineTo(ex + Math.cos(ra) * len * .48, ey + Math.sin(ra) * len * .48);
+      mc.stroke();
+
+      mc.restore();
+    }
+
+    mc.save();
+    rockPath(mc);
+    mc.clip();
+
+    for(const node of mossNodes){
+      if(!node.color || !node.color.color) node.color = {name:"deep", color:[18,86,32]};
+      const rand = localRandom(node.seed || (9000 + node.id * 7919));
+      const maturity = Math.max(0, Math.min(1, node.age / (node.growTime || 1200)));
+      if(maturity <= 0) continue;
+
+      const nx = cx + node.rx * rw;
+      const ny = cy - node.ry * rh;
+      const nodeSize = (node.startSize || 2) + ((node.maxSize || 18) - (node.startSize || 2)) * maturity;
+      const densityBoost = 1 + anchor * 0.055;
+      const lightBoost = 1 + light * 0.035;
+      const frondCount = Math.max(1, Math.floor((node.fronds || 20) * (0.16 + maturity * 0.84) * densityBoost));
+      const mossColor = node.color;
+
+      for(let f=0; f<frondCount; f++){
+        const ox = (rand() - .5) * nodeSize * 1.8;
+        const oy = (rand() - .5) * nodeSize * 1.45;
+        const fx = nx + ox;
+        const fy = ny + oy;
+
+        const surfaceAngle = Math.atan2(fy - cy, fx - cx);
+        const frondAngle = surfaceAngle - Math.PI/2 + (rand() - .5) * .95;
+        const len = (2.2 + rand() * 6.2) * (0.60 + maturity * 0.72) * lightBoost;
+        const age = .28 + rand() * .72;
+
+        const r2 = Math.floor(mossColor.color[0] * (.65 + age * .45));
+        const g2 = Math.floor(mossColor.color[1] * (.72 + age * .62));
+        const b2 = Math.floor(mossColor.color[2] * (.65 + age * .45));
+        const col = `rgb(${Math.min(220,r2)},${Math.min(240,g2)},${Math.min(190,b2)})`;
+
+        drawFrond(rand, fx, fy, frondAngle, len, col, (.40 + rand() * .30) * (0.55 + maturity * 0.45));
+
+        if(rand() < (.10 + maturity*.25 + light*.012)){
+          const col2 = `rgb(${Math.min(225,r2+14)},${Math.min(250,g2+25)},${Math.min(200,b2+8)})`;
+          drawFrond(rand, fx+(rand()-.5)*3, fy+(rand()-.5)*3, frondAngle+(rand()-.5)*.7, len*.62, col2, .34);
+        }
+      }
+
+      const tips = Math.floor((node.tipCount || 12) * maturity * maturity * (1 + light*.04));
+      for(let i=0; i<tips; i++){
+        const tx = nx + (rand()-.5) * nodeSize * 1.55;
+        const ty = ny + (rand()-.5) * nodeSize * .95;
+        const bright = Math.floor(118 + rand() * 92);
+        mc.fillStyle = `rgba(42,${bright},36,${.10 + rand()*.18})`;
+        mc.beginPath();
+        mc.arc(tx, ty, .35 + rand()*.55, 0, Math.PI*2);
+        mc.fill();
+      }
+    }
+
+    mc.restore();
+  }
+
+  function createMossNode(worldX, worldY, startingAge = 0){
+    let rx = (worldX - rock.x) / rock.w;
+    let ry = (rock.y - worldY) / rock.h;
+
+    rx = Math.max(-0.42, Math.min(0.42, rx));
+    ry = Math.max(0.16, Math.min(0.86, ry));
+
+    const picked = pickMossColor();
+    const id = nextMossNodeId++;
+
+    mossNodes.push({
+      id,
+      seed: 9000 + id * 7919,
+      rx,
+      ry,
+      age: startingAge,
+      growTime: 900 + Math.random() * 900,
+      startSize: 2.0 + Math.random() * 1.2,
+      maxSize: 12 + Math.random() * 18,
+      fronds: 14 + Math.floor(Math.random() * 24),
+      tipCount: 8 + Math.floor(Math.random() * 18),
+      color: picked
+    });
+
+    if(mossNodes.length > 140) mossNodes.shift();
+  }
+
+  function createNearbyMossNode(){
+    if(mossNodes.length === 0){
+      createMossNode(rock.x, rock.y - rock.h * 0.42, 0);
+      return;
+    }
+
+    const parent = mossNodes[Math.floor(Math.random() * mossNodes.length)];
+    const spread = 0.045 + Math.random() * (0.045 + anchor * 0.004);
+    const angle = Math.random() * Math.PI * 2;
+    const x = rock.x + (parent.rx + Math.cos(angle) * spread) * rock.w;
+    const y = rock.y - (parent.ry + Math.sin(angle) * spread * 0.72) * rock.h;
+    createMossNode(x, y, 0);
+  }
+
+  function ageMossNodes(seconds){
+    for(const node of mossNodes){
+      node.age = Math.min(node.growTime || 1200, (Number(node.age) || 0) + seconds);
+    }
+  }
+
+  function buildParticles(){
+    particles = [];
+    for(let i=0; i<48; i++) particles.push(makeParticle(false));
+  }
+
+  function makeParticle(atBottom){
+    return {
+      x: tank.x + 8 + Math.random() * (tank.w - 16),
+      y: atBottom ? tank.y + tank.h - 10 : tank.y + 8 + Math.random() * (tank.h - 16),
+      vy: -(0.035 + Math.random() * 0.095),
+      vx: (Math.random() - .5) * 0.035,
+      r: .45 + Math.random() * .95,
+      a: .05 + Math.random() * .12,
+      phase: Math.random() * Math.PI * 2
+    };
+  }
+
+  function buildShrimps(){
+    shrimps = [];
+    const s = spawnShrimp();
+    s.state = "waiting";
+    s.opacity = 0;
+    s.waitAfterLeave = 120 + Math.random() * 120;
+    shrimps.push(s);
+  }
+
+  function spawnShrimp(){
+    const fromLeft = Math.random() < .5;
+    return {
+      type: Math.random() < 0.01 ? "purple" : (Math.random() < .5 ? "blue" : "red"),
+      x: fromLeft ? tank.x - 45 : tank.x + tank.w + 45,
+      y: tank.y + tank.h * (.15 + Math.random() * .45),
+      targetX: tank.x + tank.w * (.22 + Math.random() * .56),
+      targetY: tank.y + tank.h * (.18 + Math.random() * .45),
+      dir: fromLeft ? 1 : -1,
+      scale: .25 + Math.random() * .10,
+      phase: Math.random() * Math.PI * 2,
+      state: "swim",
+      idleTimer: 0,
+      idleDur: 2.5 + Math.random() * 5,
+      opacity: 0,
+      waitAfterLeave: 180 + Math.random() * 240,
+      countedSeen: false
+    };
+  }
+
+  function updateShrimp(s, dt){
+    s.opacity = Math.min(.55, s.opacity + dt * .24);
+
+    if(s.state === "swim"){
+      const dx = s.targetX - s.x;
+      const dy = s.targetY - s.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      const spd = 14;
+      s.x += dx/dist * spd * dt;
+      s.y += dy/dist * spd * dt;
+      s.dir = dx >= 0 ? 1 : -1;
+      if(dist < 8){
+        s.state = "idle";
+        s.idleTimer = 0;
+        s.idleDur = 2 + Math.random() * 5;
+      }
+    } else if(s.state === "idle"){
+      s.x += Math.sin(time*.5 + s.phase) * .05;
+      s.y += Math.cos(time*.4 + s.phase) * .035;
+      s.dir = Math.sin(time*.55 + s.phase) > 0 ? 1 : -1;
+      s.idleTimer += dt;
+      if(s.idleTimer > s.idleDur){
+        s.state = "leave";
+        s.targetX = s.dir > 0 ? tank.x + tank.w + 60 : tank.x - 60;
+      }
+    } else if(s.state === "leave"){
+      const dx = s.targetX - s.x;
+      s.x += Math.sign(dx) * 18 * dt;
+      s.opacity -= dt * .18;
+      s.dir = dx >= 0 ? 1 : -1;
+      if(s.opacity <= 0 || Math.abs(dx) < 6){
+        Object.assign(s, spawnShrimp());
+        s.state = "waiting";
+        s.opacity = 0;
+      }
+    } else if(s.state === "waiting"){
+      s.waitAfterLeave -= dt;
+      if(s.waitAfterLeave <= 0){
+        Object.assign(s, spawnShrimp());
+      }
+    }
+
+    s.x = Math.max(tank.x + 8, Math.min(tank.x + tank.w - 8, s.x));
+    s.y = Math.max(tank.y + 8, Math.min(tank.y + tank.h * .72, s.y));
+  }
+
+  function pixelColorToRgb(color){
+    let hex = color.replace("#","").trim();
+    if(hex.length === 3) hex = hex.split("").map(c => c + c).join("");
+    const num = parseInt(hex,16);
+    if(Number.isNaN(num)) return {r:230,g:72,b:29};
+    return { r:(num >> 16) & 255, g:(num >> 8) & 255, b:num & 255 };
+  }
+
+  function pixelShade(color, percent){
+    const {r,g,b} = pixelColorToRgb(color);
+    const factor = 1 + percent / 100;
+    return `rgb(${Math.max(0,Math.min(255,Math.round(r*factor)))},${Math.max(0,Math.min(255,Math.round(g*factor)))},${Math.max(0,Math.min(255,Math.round(b*factor)))})`;
+  }
+
+  function drawShrimp(s){
+    if(s.opacity <= 0 || s.state === "waiting") return;
+    if(!s.countedSeen && s.opacity > 0.2){
+      s.countedSeen = true;
+      seenShrimpCount++;
+      save();
+    }
+    if(s.type === "purple" && !purpleShrimpSeen){
+      purpleShrimpSeen = true;
+      unlockAchievement("violetVisitor");
+    }
+
+    const bob = Math.sin(time*1.05 + s.phase) * 1.4;
+    const base = s.type === "purple" ? "#7c3aed" : (s.type === "blue" ? "#2563eb" : "#d62828");
+    const palette = {
+      dark: pixelShade(base, -38),
+      mid: base,
+      orange: pixelShade(base, 12),
+      light: pixelShade(base, 42),
+      pale: s.type === "purple" ? "#dcc7ff" : (s.type === "blue" ? "#b7d4ff" : "#ffc9b5"),
+      eye: "#050505"
+    };
+
+    const x = Math.round(s.x);
+    const y = Math.round(s.y + bob);
+    const dir = s.dir >= 0 ? 1 : -1;
+    const scale = s.scale * 0.72;
+
+    function p(x,y,w,h,c){
+      ctx.fillStyle = c;
+      ctx.fillRect(x,y,w,h);
+    }
+
+    ctx.save();
+    ctx.globalAlpha = Math.min(.62, s.opacity);
+    ctx.translate(x, y);
+    ctx.scale(dir * scale, scale);
+
+    p(-18,-6,1,1,palette.orange);
+    p(-17,-8,1,1,palette.orange);
+    p(-16,-10,1,1,palette.orange);
+    p(-15,-11,1,2,palette.orange);
+
+    p(-18,-3,1,1,palette.orange);
+    p(-16,-3,1,1,palette.orange);
+    p(-14,-2,1,1,palette.orange);
+
+    p(-16,-5,4,2,palette.mid);
+    p(-14,-4,6,2,palette.orange);
+    p(-12,-3,7,3,palette.orange);
+    p(-10,0,5,2,palette.mid);
+
+    p(-8,-7,8,2,palette.orange);
+    p(-10,-5,13,3,palette.orange);
+    p(-9,-2,14,4,palette.mid);
+    p(-7,2,11,3,palette.dark);
+
+    p(0,-8,7,2,palette.orange);
+    p(6,-9,8,2,palette.orange);
+    p(13,-8,8,2,palette.orange);
+    p(20,-7,5,2,palette.mid);
+    p(6,-7,8,2,palette.orange);
+
+    p(2,-5,25,4,palette.light);
+    p(5,-1,26,4,palette.orange);
+    p(6,3,23,3,palette.mid);
+    p(10,6,16,3,palette.dark);
+
+    p(27,-5,8,4,palette.orange);
+    p(31,-2,8,4,palette.mid);
+    p(34,2,7,5,palette.orange);
+    p(35,7,6,5,palette.mid);
+    p(33,12,6,5,palette.orange);
+    p(29,17,7,5,palette.dark);
+    p(25,21,7,4,palette.mid);
+
+    p(37,5,5,3,palette.orange);
+    p(41,4,3,2,palette.mid);
+    p(41,8,3,2,palette.light);
+    p(37,11,4,2,palette.dark);
+    p(40,6,2,4,palette.mid);
+
+    p(4,-7,6,1,palette.pale);
+    p(11,-7,5,1,palette.light);
+    p(20,-5,4,1,palette.pale);
+    p(34,4,3,1,palette.pale);
+    p(32,15,3,1,palette.light);
+
+    p(4,3,2,5,palette.mid);
+    p(12,2,2,6,palette.mid);
+    p(20,1,2,6,palette.mid);
+    p(28,0,2,6,palette.mid);
+    p(34,6,2,5,palette.mid);
+
+    p(-4,5,1,4,palette.orange);
+    p(-3,8,1,2,palette.mid);
+    p(3,6,1,4,palette.orange);
+    p(4,9,1,2,palette.mid);
+    p(10,7,1,4,palette.orange);
+    p(11,10,1,2,palette.mid);
+    p(17,7,1,4,palette.orange);
+    p(18,10,1,2,palette.mid);
+    p(24,7,1,3,palette.orange);
+    p(25,9,1,2,palette.mid);
+
+    p(-6,3,8,2,"rgba(0,0,0,.20)");
+    p(6,8,16,2,"rgba(0,0,0,.20)");
+    p(27,23,5,2,"rgba(0,0,0,.20)");
+
+    p(-7,-4,3,4,palette.eye);
+    p(-6,-4,1,1,"#ffffff");
+
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+
+  function drawBg(){
+    ctx.fillStyle = "#0e1110";
+    ctx.fillRect(0, 0, W, H);
+
+    const vg = ctx.createRadialGradient(W/2, H/2, H*.08, W/2, H/2, H*.82);
+    vg.addColorStop(0, "rgba(0,0,0,0)");
+    vg.addColorStop(1, "rgba(0,0,0,.75)");
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  function drawWater(){
+    const {x,y,w,h} = tank;
+
+    const wg = ctx.createLinearGradient(x,y,x,y+h);
+    wg.addColorStop(0, "rgba(16,40,34,.97)");
+    wg.addColorStop(.4, "rgba(12,32,26,.99)");
+    wg.addColorStop(1, "rgba(8,22,18,1)");
+    ctx.fillStyle = wg;
+    ctx.fillRect(x, y, w, h);
+
+    const lx = x + w*.50;
+    const ls = ctx.createRadialGradient(lx,y,0,lx,y+h*.28,h*.52);
+    ls.addColorStop(0, `rgba(120,205,168,${.045 + Math.min(.16, light*.018) + lightPulse*.16})`);
+    ls.addColorStop(.5, `rgba(70,150,115,${.018 + Math.min(.055, light*.007) + lightPulse*.05})`);
+    ls.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = ls;
+    ctx.fillRect(x, y, w, h);
+
+    const ls2 = ctx.createRadialGradient(x+w*.74,y,0,x+w*.62,y+h*.38,h*.46);
+    ls2.addColorStop(0, `rgba(130,200,165,${.025 + Math.min(.055, light*.007) + lightPulse*.04})`);
+    ls2.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = ls2;
+    ctx.fillRect(x, y, w, h);
+
+    const fg = ctx.createRadialGradient(x+w*.5,y+h,0,x+w*.5,y+h,w*.44);
+    fg.addColorStop(0, "rgba(55,85,65,.28)");
+    fg.addColorStop(.6, "rgba(28,52,38,.08)");
+    fg.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = fg;
+    ctx.fillRect(x, y, w, h);
+
+    if(light > 0){
+      ctx.fillStyle = `rgba(135,215,175,${Math.min(.055, light*.006)})`;
+      ctx.fillRect(x, y, w, h);
+    }
+  }
+
+  function drawFloor(){
+    const {x,y,w,h} = tank;
+
+    const fg = ctx.createLinearGradient(x,y+h*.87,x,y+h);
+    fg.addColorStop(0, "rgba(38,32,22,0)");
+    fg.addColorStop(.3, "rgba(45,38,26,.88)");
+    fg.addColorStop(1, "rgba(36,30,20,1)");
+    ctx.fillStyle = fg;
+    ctx.fillRect(x, y+h*.87, w, h*.13);
+  }
+
+  function drawGlass(){
+    const {x,y,w,h} = tank;
+
+    ctx.save();
+
+    const lg = ctx.createLinearGradient(x,y,x+8,y);
+    lg.addColorStop(0, "rgba(130,195,160,.24)");
+    lg.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = lg;
+    ctx.fillRect(x, y, 10, h);
+
+    const rg = ctx.createLinearGradient(x+w,y,x+w-8,y);
+    rg.addColorStop(0, "rgba(130,195,160,.20)");
+    rg.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = rg;
+    ctx.fillRect(x+w-10, y, 10, h);
+
+    const tg = ctx.createLinearGradient(x,y,x,y+10);
+    tg.addColorStop(0, "rgba(195,240,215,.52)");
+    tg.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = tg;
+    ctx.fillRect(x, y, w, 10);
+
+    const bg2 = ctx.createLinearGradient(x,y+h,x,y+h-6);
+    bg2.addColorStop(0, "rgba(160,215,185,.28)");
+    bg2.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = bg2;
+    ctx.fillRect(x, y+h-6, w, 6);
+
+    ctx.fillStyle = "rgba(200,242,218,.68)";
+    ctx.fillRect(x,y,3,3);
+    ctx.fillRect(x+w-3,y,3,3);
+    ctx.fillRect(x,y+h-3,3,3);
+    ctx.fillRect(x+w-3,y+h-3,3,3);
+
+    ctx.strokeStyle = "rgba(155,218,180,.42)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x+.5, y+.5, w-1, h-1);
+
+    ctx.globalAlpha = .038;
+    [0.13,0.74].forEach(fx=>{
+      const ir = ctx.createLinearGradient(x+w*fx,y,x+w*(fx+.05),y);
+      ir.addColorStop(0, "rgba(0,0,0,0)");
+      ir.addColorStop(.5, "rgba(200,255,225,1)");
+      ir.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = ir;
+      ctx.fillRect(x+w*fx, y, w*.05, h);
+    });
+
+    ctx.globalAlpha = .32;
+    ctx.strokeStyle = "rgba(175,228,200,1)";
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(x+3,y+3);
+    ctx.lineTo(x+w-3,y+3);
+    ctx.stroke();
+
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+
+  function drawSubstrateBlanket(){
+    const {x,y,w,h} = tank;
+
+    // Same-family substrate colors as the floor, drawn over the rock base.
+    // This is not a shadow trick. It is the floor visually covering the bottom edge.
+    const top = rock.y - rock.h * 0.045;
+    const blanketH = rock.h * 0.16;
+
+    const g = ctx.createLinearGradient(0, top, 0, top + blanketH);
+    g.addColorStop(0, "rgba(63,52,34,0.00)");
+    g.addColorStop(0.28, "rgba(57,46,30,0.72)");
+    g.addColorStop(1, "rgba(38,30,19,0.96)");
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x + 2, y + h * 0.73, w - 4, h * 0.16);
+    ctx.clip();
+
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(
+      rock.x,
+      rock.y - rock.h * 0.012,
+      rock.w * 0.57,
+      rock.h * 0.095,
+      0,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+
+    // A small amount of substrate grit on top to break the perfect oval.
+    let seed = 2468;
+    function rr(){
+      seed = (seed * 16807) % 2147483647;
+      return (seed - 1) / 2147483646;
+    }
+
+    for(let i=0;i<64;i++){
+      const gx = rock.x + (rr() - 0.5) * rock.w * 0.96;
+      const gy = rock.y - rock.h * 0.055 + rr() * rock.h * 0.105;
+      const gr = 0.45 + rr() * 1.15;
+      ctx.fillStyle = rr() < 0.55
+        ? "rgba(87,72,48,0.50)"
+        : "rgba(26,21,14,0.42)";
+      ctx.beginPath();
+      ctx.arc(gx, gy, gr, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+
+  function drawGhostSpore(){
+    if(!ghostSpore) return;
+    ctx.save();
+    ctx.globalAlpha = .12 + Math.sin(time*2.4)*.04;
+    ctx.fillStyle = "#a8ffb0";
+    ctx.beginPath();
+    ctx.arc(ghostSpore.x, ghostSpore.y, 3.5 + Math.sin(time*3.2), 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+
+  function roundRect(ctx,x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.lineTo(x+w-r,y);
+    ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r);
+    ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h);
+    ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r);
+    ctx.quadraticCurveTo(x,y,x+r,y);
+    ctx.closePath();
+  }
+
+
+  function drawAchievementIcon(){
+    if(!achIconCanvas) return;
+    const ctx = achIconCanvas.getContext("2d");
+    ctx.clearRect(0,0,48,48);
+
+    const bg = ctx.createLinearGradient(0,0,0,48);
+    bg.addColorStop(0,"rgba(15,27,22,0.98)");
+    bg.addColorStop(1,"rgba(5,12,10,0.98)");
+
+    roundRect(ctx,2.5,2.5,43,43,14);
+    ctx.fillStyle = bg;
+    ctx.fill();
+    ctx.strokeStyle = "rgba(180,240,230,0.18)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    roundRect(ctx,6,6,36,36,10);
+    ctx.strokeStyle = "rgba(220,255,240,0.08)";
+    ctx.stroke();
+
+    drawAchievementTrophy(ctx);
+
+    drawAchievementMossCluster(ctx, 10, 8, 12, 8, -0.35, 101, 14);
+    drawAchievementMossCluster(ctx, 31, 8, 11, 8, 0.30, 202, 13);
+    drawAchievementMossCluster(ctx, 8, 20, 11, 8, -0.55, 303, 12);
+    drawAchievementMossCluster(ctx, 31, 22, 10, 8, 0.48, 404, 10);
+    drawAchievementMossCluster(ctx, 11, 34, 12, 7, -0.15, 505, 12);
+    drawAchievementMossCluster(ctx, 29, 35, 11, 7, 0.20, 606, 10);
+  }
+
+  function drawAchievementTrophy(ctx){
+    ctx.save();
+
+    ctx.fillStyle = "rgba(0,0,0,0.28)";
+    ctx.beginPath();
+    ctx.ellipse(24,38,14,4,0,0,Math.PI*2);
+    ctx.fill();
+
+    const gold = ctx.createLinearGradient(10,6,34,36);
+    gold.addColorStop(0,"#f4cf68");
+    gold.addColorStop(0.42,"#d59a35");
+    gold.addColorStop(1,"#6c4415");
+
+    ctx.strokeStyle = "#c58f32";
+    ctx.lineWidth = 4.2;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.arc(12,17,6,Math.PI*.55,Math.PI*1.52);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(36,17,6,Math.PI*1.48,Math.PI*.45);
+    ctx.stroke();
+
+    ctx.fillStyle = gold;
+    roundRect(ctx,14,8,20,15,4);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(16,21);
+    ctx.lineTo(32,21);
+    ctx.lineTo(28,27);
+    ctx.lineTo(20,27);
+    ctx.closePath();
+    ctx.fill();
+
+    const stem = ctx.createLinearGradient(0,24,0,34);
+    stem.addColorStop(0,"#dca246");
+    stem.addColorStop(1,"#6c4415");
+    ctx.fillStyle = stem;
+    roundRect(ctx,21,26,6,8,2);
+    ctx.fill();
+
+    ctx.fillStyle = "#c58f32";
+    roundRect(ctx,16,33,16,4,2);
+    ctx.fill();
+    ctx.fillStyle = "#81551d";
+    roundRect(ctx,11,37,26,5,3);
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(255,245,170,0.62)";
+    roundRect(ctx,16,10,9,2,2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,245,170,0.25)";
+    roundRect(ctx,17,13,2,8,2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawAchievementMossCluster(ctx, cx, cy, w, h, lean, seedStart, count){
+    let seed = seedStart;
+    function sr(){
+      seed = (seed * 16807) % 2147483647;
+      return (seed - 1) / 2147483646;
+    }
+
+    const colors = [
+      [18,86,32],
+      [34,116,46],
+      [77,106,43],
+      [8,72,56],
+      [116,158,77]
+    ];
+
+    function drawFrond(x, y, angle, len, col, alpha){
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = col;
+      ctx.lineCap = "round";
+      ctx.lineWidth = 0.42 + len * 0.032;
+
+      const ex = x + Math.cos(angle) * len;
+      const ey = y + Math.sin(angle) * len;
+
+      ctx.beginPath();
+      ctx.moveTo(x,y);
+      ctx.quadraticCurveTo(
+        x + Math.cos(angle + (sr()-.5)*.35) * len * .48,
+        y + Math.sin(angle + (sr()-.5)*.35) * len * .48,
+        ex, ey
+      );
+      ctx.stroke();
+
+      const la = angle - 0.40 - sr() * 0.25;
+      const ra = angle + 0.40 + sr() * 0.25;
+
+      ctx.lineWidth = 0.32;
+      ctx.beginPath();
+      ctx.moveTo(ex,ey);
+      ctx.lineTo(ex + Math.cos(la)*len*.48, ey + Math.sin(la)*len*.48);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(ex,ey);
+      ctx.lineTo(ex + Math.cos(ra)*len*.48, ey + Math.sin(ra)*len*.48);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    for(let i=0;i<4;i++){
+      const x = cx + (sr()-.5)*w;
+      const y = cy + (sr()-.5)*h;
+      const r = 0.9 + sr()*1.4;
+      ctx.fillStyle = `rgba(18,70,24,${0.38+sr()*0.16})`;
+      ctx.beginPath();
+      ctx.arc(x,y,r,0,Math.PI*2);
+      ctx.fill();
+    }
+
+    for(let i=0;i<count;i++){
+      const x = cx + (sr()-.5)*w;
+      const y = cy + (sr()-.5)*h;
+      const baseAngle = -Math.PI/2 + lean + (sr()-.5)*1.05;
+      const len = 2.2 + sr()*4.6;
+
+      const c = colors[Math.floor(sr()*colors.length)];
+      const age = .35 + sr()*.65;
+      const r = Math.floor(c[0] * (.70 + age*.45));
+      const g = Math.floor(c[1] * (.78 + age*.62));
+      const b = Math.floor(c[2] * (.70 + age*.45));
+      const col = `rgb(${Math.min(220,r)},${Math.min(235,g)},${Math.min(190,b)})`;
+
+      drawFrond(x,y,baseAngle,len,col,.54+sr()*.24);
+
+      if(sr()<.22){
+        const col2 = `rgb(${Math.min(225,r+12)},${Math.min(245,g+22)},${Math.min(200,b+8)})`;
+        drawFrond(x+(sr()-.5)*1.6,y+(sr()-.5)*1.6,baseAngle+(sr()-.5)*.55,len*.58,col2,.34);
+      }
+    }
+
+    for(let i=0;i<5;i++){
+      const x = cx + (sr()-.5)*w;
+      const y = cy + (sr()-.5)*h;
+      const bright = Math.floor(115+sr()*90);
+      ctx.fillStyle = `rgba(42,${bright},36,${.13+sr()*.16})`;
+      ctx.beginPath();
+      ctx.arc(x,y,.30+sr()*.35,0,Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+
+  const ACHIEVEMENTS = [
+    { id:"firstBloom", cat:"growth", name:"First Bloom", flavor:"Something finally took hold.", hidden:false, check:()=>mossNodes.length >= 1 },
+    { id:"softSpread", cat:"growth", name:"Soft Spread", flavor:"The green found another edge.", hidden:false, check:()=>mossNodes.length >= 4 },
+    { id:"settledStone", cat:"growth", name:"Settled Stone", flavor:"The rock began to soften.", hidden:false, check:()=>mossNodes.length >= 8 },
+    { id:"verdantStone", cat:"growth", name:"Verdant Stone", flavor:"The stone remembered water.", hidden:false, check:()=>mossNodes.length >= 14 },
+    { id:"deepRoots", cat:"growth", name:"Deep Roots", flavor:"The moss no longer seemed temporary.", hidden:false, check:()=>mossNodes.length >= 22 },
+    { id:"livingSurface", cat:"growth", name:"Living Surface", flavor:"Almost nothing bare remained.", hidden:false, check:()=>mossNodes.length >= 38 },
+    { id:"heldFast", cat:"growth", name:"Held Fast", flavor:"The moss held its place.", hidden:false, check:()=>anchor >= 3 },
+    { id:"softLight", cat:"environment", name:"Soft Light", flavor:"The tank became easier to see.", hidden:false, check:()=>light >= 1 },
+    { id:"gentleCurrent", cat:"environment", name:"Gentle Current", flavor:"The water learned to move.", hidden:false, check:()=>flow >= 1 },
+    { id:"quietWater", cat:"environment", name:"Quiet Water", flavor:"Nothing disturbed the enclosure.", hidden:false, check:()=>flow === 0 && ecosystemAge() >= 3600 },
+    { id:"darkGlass", cat:"environment", name:"Dark Glass", flavor:"The corners stayed hidden.", hidden:false, check:()=>light === 0 && ecosystemAge() >= 3600 },
+    { id:"restingGlow", cat:"environment", name:"Resting Glow", flavor:"The light settled into warmth.", hidden:false, check:()=>light >= 5 },
+    { id:"firstHour", cat:"time", name:"First Hour", flavor:"The ecosystem endured.", hidden:false, check:()=>ecosystemAge() >= 3600 },
+    { id:"overnight", cat:"time", name:"Overnight", flavor:"The tank waited in silence.", hidden:false, check:()=>ecosystemAge() >= 8 * 3600 },
+    { id:"oneDayLater", cat:"time", name:"One Day Later", flavor:"A full day passed beneath the glass.", hidden:false, check:()=>ecosystemAge() >= 24 * 3600 },
+    { id:"threeDaysSettled", cat:"time", name:"Three Days Settled", flavor:"Time passed. The glass waited.", hidden:false, check:()=>ecosystemAge() >= 72 * 3600 },
+    { id:"oneWeekOld", cat:"time", name:"One Week Old", flavor:"The moss persisted.", hidden:false, check:()=>ecosystemAge() >= 7 * 24 * 3600 },
+    { id:"twoWeeksDeep", cat:"time", name:"Two Weeks Deep", flavor:"The enclosure felt older now.", hidden:false, check:()=>ecosystemAge() >= 14 * 24 * 3600 },
+    { id:"oneMonthSettled", cat:"time", name:"One Month Settled", flavor:"The ecosystem became familiar.", hidden:false, check:()=>ecosystemAge() >= 30 * 24 * 3600 },
+    { id:"quietVisitor", cat:"observation", name:"Quiet Visitor", flavor:"Something passed through the glass.", hidden:false, check:()=>seenShrimpCount >= 1 },
+    { id:"stillWatching", cat:"observation", name:"Still Watching", flavor:"The shrimp returned eventually.", hidden:false, check:()=>seenShrimpCount >= 3 },
+    { id:"shadowMovement", cat:"observation", name:"Shadow Movement", flavor:"A shape moved through the dark water.", hidden:false, check:()=>seenShrimpCount >= 1 && light <= 1 },
+    { id:"briefColor", cat:"observation", name:"Brief Color", flavor:"Something brighter crossed the stone.", hidden:false, check:()=>seenShrimpCount >= 2 },
+    { id:"tinyFeet", cat:"observation", name:"Tiny Feet", flavor:"The moss shifted slightly.", hidden:false, check:()=>flow >= 2 && mossNodes.length >= 8 },
+    { id:"lowTide", cat:"observation", name:"Low Tide", flavor:"The tank felt unusually still.", hidden:false, check:()=>flow === 0 && mossNodes.length >= 8 },
+    { id:"glassHabitat", cat:"observation", name:"Glass Habitat", flavor:"The enclosure no longer felt empty.", hidden:false, check:()=>mossNodes.length >= 12 && seenShrimpCount >= 1 },
+    { id:"slowChange", cat:"observation", name:"Slow Change", flavor:"The rock looked different somehow.", hidden:false, check:()=>mossNodes.length >= 18 },
+    { id:"greenSilence", cat:"observation", name:"Green Silence", flavor:"The ecosystem settled into itself.", hidden:false, check:()=>mossNodes.length >= 30 && flow <= 2 },
+    { id:"patientRoom", cat:"observation", name:"Patient Room", flavor:"Nothing hurried here.", hidden:false, check:()=>ecosystemAge() >= 2 * 3600 && mossNodes.length >= 5 },
+    { id:"softBloom", cat:"observation", name:"Soft Bloom", flavor:"The moss thickened quietly.", hidden:false, check:()=>mossNodes.some(n => (n.age || 0) >= (n.growTime || 1200) * 0.75) },
+    { id:"forgottenCorner", cat:"observation", name:"Forgotten Corner", flavor:"Growth reached the darker edge.", hidden:false, check:()=>mossNodes.some(n => Math.abs(n.rx || 0) > 0.34) },
+    { id:"dimReflection", cat:"observation", name:"Dim Reflection", flavor:"The glass barely reflected the room anymore.", hidden:false, check:()=>light >= 2 && mossNodes.length >= 12 },
+    { id:"waterMemory", cat:"observation", name:"Water Memory", flavor:"The enclosure remembered its shape.", hidden:false, check:()=>ecosystemAge() >= 24 * 3600 && mossNodes.length >= 10 },
+    { id:"stillHere", cat:"observation", name:"Still Here", flavor:"Even after time passed, it remained.", hidden:false, check:()=>ecosystemAge() >= 48 * 3600 && mossNodes.length >= 1 },
+    { id:"stoneBreathing", cat:"observation", name:"Stone Breathing", flavor:"The rock no longer seemed lifeless.", hidden:false, check:()=>mossNodes.length >= 28 },
+    { id:"matureGrowth", cat:"observation", name:"Mature Growth", flavor:"The ecosystem felt complete.", hidden:false, check:()=>mossNodes.length >= 42 },
+    { id:"restingWater", cat:"hidden", name:"Resting Water", flavor:"Nothing disturbed the enclosure.", hidden:true, check:()=>ecosystemAge() >= 24 * 3600 && flow === 0 && anchor === 0 && light === 0 },
+    { id:"stoneMemory", cat:"hidden", name:"Stone Memory", flavor:"The rock kept what the water left behind.", hidden:true, check:()=>ecosystemAge() >= 7 * 24 * 3600 && mossNodes.length >= 25 },
+    { id:"smallMercy", cat:"hidden", name:"Small Mercy", flavor:"A little stone remained uncovered.", hidden:true, check:()=>mossNodes.length >= 44 },
+    { id:"noHurry", cat:"hidden", name:"No Hurry", flavor:"The tank did not ask to be finished.", hidden:true, check:()=>ecosystemAge() >= 6 * 3600 && flow + anchor + light <= 1 },
+    { id:"violetVisitor", cat:"hidden", name:"Violet Visitor", flavor:"A rare color crossed the water.", hidden:true, check:()=>purpleShrimpSeen },
+    { id:"mossArchive", cat:"completion", name:"Moss Archive", flavor:"The tank kept its own quiet record.", hidden:false, check:()=>unlockedCount() >= 25 },
+    { id:"closedWorld", cat:"completion", name:"Closed World", flavor:"Nothing more was needed.", hidden:false, check:()=>mossNodes.length >= 45 && light >= 5 && anchor >= 5 },
+    { id:"quietEnd", cat:"completion", name:"Quiet End", flavor:"The enclosure settled permanently.", hidden:false, check:()=>unlockedCount() >= 40 },
+    { id:"finalLight", cat:"completion", name:"Final Light", flavor:"The glow remained long after the room emptied.", hidden:false, check:()=>light >= 8 },
+    { id:"persistent", cat:"completion", name:"Persistent", flavor:"It stayed alive longer than expected.", hidden:false, check:()=>ecosystemAge() >= 30 * 24 * 3600 && mossNodes.length >= 30 }
+  ];
+
+  function ecosystemAge(){ return Math.floor((Date.now() - creationTime) / 1000); }
+
+  function unlockedCount(){ return Object.keys(achievements).length; }
+
+  function achievementDate(){
+    return new Date().toLocaleDateString(undefined, { year:"numeric", month:"short", day:"numeric" });
+  }
+
+  function showAchievementToast(ach){
+    achievementToast.innerHTML = `
+      <div class="label">Achievement Unlocked</div>
+      <div class="name">${ach.name}</div>
+      <div class="flavor">${ach.flavor}</div>
+    `;
+    achievementToast.classList.add("show");
+    if(achievementToastTimer) clearTimeout(achievementToastTimer);
+    achievementToastTimer = setTimeout(() => achievementToast.classList.remove("show"), 4200);
+  }
+
+  function unlockAchievement(id){
+    if(achievements[id]) return;
+    const ach = ACHIEVEMENTS.find(a => a.id === id);
+    if(!ach) return;
+    achievements[id] = { date: achievementDate() };
+    showAchievementToast(ach);
+    renderAchievements();
+    save();
+  }
+
+  function updateAchievements(){
+    for(const ach of ACHIEVEMENTS){
+      if(!achievements[ach.id] && ach.check()){
+        unlockAchievement(ach.id);
+      }
+    }
+  }
+
+  function renderAchievements(){
+    if(!achievementsList) return;
+    achievementsList.innerHTML = "";
+    const summary = document.createElement("div");
+    summary.className = "achItem";
+    summary.innerHTML = `<div class="achName">${unlockedCount()} / ${ACHIEVEMENTS.length} unlocked</div><div class="achFlavor">The enclosure remained still.</div>`;
+    achievementsList.appendChild(summary);
+    for(const ach of ACHIEVEMENTS){
+      const unlocked = achievements[ach.id];
+      const item = document.createElement("div");
+      item.className = "achItem" + (unlocked ? "" : " achLocked");
+      if(unlocked){
+        item.innerHTML = `<div class="achName">✓ ${ach.name}</div><div class="achFlavor">${ach.flavor}</div><div class="achDate">Unlocked ${unlocked.date}</div>`;
+      } else {
+        item.innerHTML = `<div class="achName">□ ${ach.hidden ? "???" : ach.name}</div><div class="achFlavor">${ach.hidden ? "Hidden achievement" : "Locked"}</div>`;
+      }
+      achievementsList.appendChild(item);
+    }
+  }
+
+  function updateUI(){
+    overgrowthEl.textContent = `${overgrowth.toFixed(1)} Overgrowth`;
+    rateEl.textContent = `+${getRate().toFixed(1)}/sec`;
+    flowCostEl.textContent = flowCost();
+    anchorCostEl.textContent = anchorCost();
+    lightCostEl.textContent = lightCost();
+  }
+
+
+  function applyElapsedProgress(){
+    const now = Date.now();
+    const elapsed = Math.min(3600, Math.max(0, (now - lastOfflineAppliedAt) / 1000));
+    if(elapsed < 2) return;
+    overgrowth += elapsed * getRate();
+    ageMossNodes(elapsed);
+    const newNodes = Math.min(3, Math.floor(elapsed / 900));
+    for(let i=0; i<newNodes; i++){
+      if(mossNodes.length) createNearbyMossNode();
+    }
+    lastOfflineAppliedAt = now;
+    bakeMoss();
+    updateUI();
+    updateAchievements();
+    save();
+  }
+
+
+  function save(){
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      overgrowth, baseRate, flow, anchor, light,
+      mossNodes, nextMossNodeId,
+      creationTime, achievements, purpleShrimpSeen, seenShrimpCount, lastOfflineAppliedAt,
+      lastTime: Date.now()
+    }));
+  }
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(SAVE_KEY);
+      if(!raw) return false;
+
+      const data = JSON.parse(raw);
+      overgrowth = Number(data.overgrowth) || 0;
+      baseRate = Number(data.baseRate) || .5;
+      flow = Number(data.flow) || 0;
+      anchor = Number(data.anchor) || 0;
+      light = Number(data.light) || 0;
+      mossNodes = Array.isArray(data.mossNodes) ? data.mossNodes : [];
+      nextMossNodeId = Number(data.nextMossNodeId) || (mossNodes.length + 1);
+      creationTime = Number(data.creationTime) || Date.now();
+      achievements = data.achievements || {};
+      purpleShrimpSeen = !!data.purpleShrimpSeen;
+      seenShrimpCount = Number(data.seenShrimpCount) || 0;
+      lastOfflineAppliedAt = Number(data.lastOfflineAppliedAt) || Date.now();
+
+      if(data.lastTime){
+        const seconds = Math.min(3600, Math.max(0, (Date.now() - data.lastTime) / 1000));
+        const gained = seconds * getRate();
+        if(gained > .2){
+          overgrowth += gained;
+          ageMossNodes(seconds);
+          const offlineNewNodes = Math.min(3, Math.floor(seconds / 900));
+          for(let i=0; i<offlineNewNodes; i++) createNearbyMossNode();
+          bakeMoss();
+          toast.textContent = `The moss grew while you were gone: +${gained.toFixed(1)} Overgrowth`;
+          toast.classList.add("show");
+          setTimeout(()=>toast.classList.remove("show"), 3600);
+        }
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function buy(type){
+    if(type === "flow"){
+      const cost = flowCost();
+      if(overgrowth < cost) return;
+      overgrowth -= cost;
+      flow++;
+    }
+
+    if(type === "anchor"){
+      const cost = anchorCost();
+      if(overgrowth < cost) return;
+      overgrowth -= cost;
+      anchor++;
+      mossCoverage = Math.min(1.0, mossCoverage + .008);
+      bakeMoss();
+    }
+
+    if(type === "light"){
+      if(light >= 8) return;
+      const cost = Number(lightCost());
+      if(overgrowth < cost) return;
+      overgrowth -= cost;
+      light++;
+      bakeRock();
+      bakeMoss();
+    }
+
+    updateUI();
+    save();
+  }
+
+  flowBtn.addEventListener("click", ()=>buy("flow"));
+  anchorBtn.addEventListener("click", ()=>buy("anchor"));
+  lightBtn.addEventListener("click", ()=>buy("light"));
+  achBtn.addEventListener("click", ()=>{
+    achievementsPanel.classList.toggle("show");
+    renderAchievements();
+  });
+  achClose.addEventListener("click", ()=>achievementsPanel.classList.remove("show"));
+
+  let last = performance.now();
+  function loop(now){
+    const dt = Math.min(.05, (now-last)/1000);
+    last = now;
+    time += dt;
+    updateAchievements();
+
+    overgrowth += getRate() * dt;
+    lightPulse = Math.max(0, lightPulse - dt * 1.8);
+
+    // Early emergence boost: creates the first visible patch soon, then lets the slow game take over.
+    if(mossNodes.length === 0 && time > 8){
+      createMossNode(rock.x, rock.y - rock.h * 0.42, 45);
+      lightPulse = 0.55;
+      bakeMoss();
+    }
+
+    if(mossNodes.length > 0){
+      const earlyBoost = mossNodes.length === 1 && mossNodes[0].age < 180 ? 1.8 : 1.0;
+      ageMossNodes(dt * earlyBoost);
+      earlyMossTimer += dt;
+      if(earlyMossTimer > 4){
+        earlyMossTimer = 0;
+        bakeMoss();
+      }
+    }
+
+    anticipation += dt * .15;
+    if(mossNodes.length && !ghostSpore && Math.random() < .0015 + anticipation * .00025){
+      const parent = mossNodes[Math.floor(Math.random() * mossNodes.length)];
+      ghostSpore = {
+        x: rock.x + (parent.rx + (Math.random()-.5)*0.12) * rock.w,
+        y: rock.y - (parent.ry + (Math.random()-.5)*0.09) * rock.h,
+        life: 0
+      };
+      lightPulse = 0.35;
+    }
+
+    if(ghostSpore){
+      ghostSpore.life += dt;
+      if(ghostSpore.life > 7){
+        createMossNode(ghostSpore.x, ghostSpore.y, 0);
+        lightPulse = 0.55;
+        bakeMoss();
+        ghostSpore = null;
+        anticipation = 0;
+      }
+    }
+
+    rebuildMossTimer += dt;
+    if(rebuildMossTimer > 90){
+      rebuildMossTimer = 0;
+      if(mossNodes.length && mossNodes.length < 90 && Math.random() < 0.28 + anchor * 0.015){
+        createNearbyMossNode();
+        lightPulse = 0.35;
+      }
+      bakeMoss();
+    }
+
+    drawBg();
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(tank.x+2, tank.y+2, tank.w-4, tank.h-4);
+    ctx.clip();
+
+    drawWater();
+    drawFloor();
+
+    const rpad = 36;
+    ctx.drawImage(
+      rockCanvas,
+      0,0,rockCanvas.width,rockCanvas.height,
+      rock.x-rock.w/2-rpad, rock.y-rock.h-rpad,
+      rockCanvas.width/dpr, rockCanvas.height/dpr
+    );
+
+    const mpad = 28;
+    const wobble = Math.sin(time*.35) * 0.45;
+    ctx.save();
+    ctx.translate(wobble, 0);
+    ctx.drawImage(
+      mossCanvas,
+      0,0,mossCanvas.width,mossCanvas.height,
+      rock.x-rock.w/2-mpad, rock.y-rock.h-mpad,
+      mossCanvas.width/dpr, mossCanvas.height/dpr
+    );
+    ctx.restore();
+drawGhostSpore();
+
+    for(const p of particles){
+      p.x += p.vx + Math.sin(time*.28 + p.phase) * .014;
+      p.y += p.vy - flow * .002;
+      if(p.y < tank.y + 4) Object.assign(p, makeParticle(true));
+      if(p.x < tank.x + 4 || p.x > tank.x + tank.w - 4) p.vx *= -1;
+      ctx.globalAlpha = p.a * (.65 + .35 * Math.sin(time*.7 + p.phase));
+      ctx.fillStyle = "#b2d4c2";
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    for(const s of shrimps){
+      updateShrimp(s, dt);
+      drawShrimp(s);
+    }
+
+    ctx.restore();
+    drawGlass();
+
+    updateUI();
+    requestAnimationFrame(loop);
+  }
+
+  window.addEventListener("resize", resize);
+  document.addEventListener("visibilitychange", ()=>{
+    if(document.hidden){
+      lastOfflineAppliedAt = Date.now();
+      save();
+    } else {
+      applyElapsedProgress();
+    }
+  });
+  window.addEventListener("beforeunload", save);
+
+  resize();
+  load();
+  lastOfflineAppliedAt = Date.now();
+  bakeMoss();
+  updateUI();
+  updateAchievements();
+  renderAchievements();
+  drawAchievementIcon();
+  requestAnimationFrame(loop);
+})();
+</script>
+
+<script>
+(function(){
+  const solemn = "The enclosure remained still.";
+  const candidates = [
+    "#flavorText",
+    "#tagline",
+    ".flavorText",
+    ".tagline",
+    ".subtitle",
+    ".note",
+    ".footerText"
+  ];
+  for (const sel of candidates) {
+    document.querySelectorAll(sel).forEach(el => {
+      if (el && el.textContent.trim().length) el.textContent = solemn;
+    });
+  }
+
+  // Last-resort visible-text replacement for small footer/subtitle nodes.
+  document.querySelectorAll("div, p, span").forEach(el => {
+    const t = el.textContent.trim();
+    if (
+      t.includes("trophy") ||
+      t.includes("quiet record") ||
+      t.includes("keeps growing") ||
+      t.includes("moss spreads") ||
+      t.includes("aquarium idle") ||
+      t.includes("enclosed world")
+    ) {
+      el.textContent = solemn;
+    }
+  });
+})();
+</script>
+
+
+<script>
+(function(){
+  function applyFinalBranding(){
+    const titleCandidates = [
+      "#brandTitle", ".brandTitle", ".titleText", ".gameTitle", ".headerTitle", ".title", "h1"
+    ];
+
+    let titleEl = null;
+    for(const sel of titleCandidates){
+      const found = [...document.querySelectorAll(sel)].find(el => {
+        const t = (el.textContent || "").toLowerCase();
+        return t.includes("moss") || t.includes("overgrowth") || t.length < 40;
+      });
+      if(found){ titleEl = found; break; }
+    }
+
+    // Fallback: search all text nodes that still say moss idle.
+    if(!titleEl){
+      titleEl = [...document.querySelectorAll("div, span, h1, h2")].find(el => {
+        const t = (el.textContent || "").trim().toLowerCase();
+        return t === "moss idle" || t.includes("moss idle");
+      });
+    }
+
+    if(titleEl){
+      titleEl.id = "brandTitle";
+      titleEl.textContent = "OVERGROWTH";
+      titleEl.style.color = "#7fa487";
+      titleEl.style.letterSpacing = ".08em";
+      titleEl.style.textShadow = "0 0 10px rgba(80,120,88,.18), 0 0 18px rgba(35,65,40,.10)";
+
+      let studio = document.getElementById("brandStudio");
+      if(!studio){
+        studio = document.createElement("div");
+        studio.id = "brandStudio";
+        studio.textContent = "Shrimplicity Games ©";
+        studio.style.marginTop = "3px";
+        studio.style.textAlign = "center";
+        titleEl.insertAdjacentElement("afterend", studio);
+      }
+      studio.textContent = "Shrimplicity Games ©";
+      studio.style.color = "rgba(165,195,170,.62)";
+      studio.style.letterSpacing = ".10em";
+      studio.style.fontSize = "12px";
+    }
+
+    // Replace any remaining visible old branding text.
+    document.querySelectorAll("div, span, h1, h2, p").forEach(el => {
+      if(el.children.length === 0 && /moss idle/i.test(el.textContent)){
+        el.textContent = el.textContent.replace(/moss idle/ig, "OVERGROWTH");
+      }
+    });
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", applyFinalBranding);
+  } else {
+    applyFinalBranding();
+  }
+  setTimeout(applyFinalBranding, 100);
+})();
+</script>
+
+</body>
+</html>
